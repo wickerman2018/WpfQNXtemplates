@@ -20,6 +20,8 @@ namespace WpfQNXtemplates
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const char NL = '\n';
+
         public MainWindow()
         {
             InitializeComponent();
@@ -56,22 +58,56 @@ namespace WpfQNXtemplates
 
             tbSourceGen.Clear();
             //Создание функции
-            tbSourceGen.AppendText("static void *" + tbThreadName.Text + " (void *){" + Environment.NewLine
-                + Environment.NewLine +
-                "return 0; " + Environment.NewLine +
-                "};" + Environment.NewLine + Environment.NewLine);
+            if (cbThreadHeader.IsChecked == true)
+            {
+                tbSourceGen.AppendText("#include <pthread.h>" + NL + NL);
+            }
+            tbSourceGen.AppendText("static void *" + tbThreadName.Text + " (void *){" + NL + NL +
+                "return 0; " + NL +
+                "};" + NL + NL);
             //Запуск потока
-            tbSourceGen.AppendText("pthread_attr_t attr_th;"+Environment.NewLine);
-            tbSourceGen.AppendText("pthread_attr_init(&attr_th);" + Environment.NewLine);
-            tbSourceGen.AppendText("pthread_attr_setdetachstate(&attr_th, "+ ThreadDetachAttr + ");" + Environment.NewLine);
+            tbSourceGen.AppendText("pthread_attr_t attr_th;"+ NL);
+            tbSourceGen.AppendText("pthread_attr_init(&attr_th);" + NL);
+            tbSourceGen.AppendText("pthread_attr_setdetachstate(&attr_th, "+ ThreadDetachAttr + ");" + NL);
             if (cbThreadSchedpolicy.SelectedIndex != 1)
-                tbSourceGen.AppendText("pthread_attr_setschedpolicy(&attr_th, " + ThreadSchedpolicy + ");" + Environment.NewLine);
-            tbSourceGen.AppendText("pthread_create(NULL, &attr_th, " + tbThreadName.Text + ", NULL);" + Environment.NewLine);
+                tbSourceGen.AppendText("pthread_attr_setschedpolicy(&attr_th, " + ThreadSchedpolicy + ");" + NL);
+            tbSourceGen.AppendText("pthread_create(NULL, &attr_th, " + tbThreadName.Text + ", NULL);" + NL);
         }
 
-        private void BtnCopyToBuf_Click(object sender, RoutedEventArgs e)
+        private void BtnCopyToBuf_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(tbSourceGen.Text);
+
+        private void BtnMessServGen_Click(object sender, RoutedEventArgs e)
         {
-            Clipboard.SetText(tbSourceGen.Text);
+            tbSourceGen.Clear();
+
+            tbSourceGen.AppendText("int rcvid;" + NL);
+            tbSourceGen.AppendText("dispatch_t *dpp;" + NL);
+            tbSourceGen.AppendText("name_attach_t *my_prefix=NULL;" + NL);
+            tbSourceGen.AppendText("dpp=dispatch_create();" + NL);
+            tbSourceGen.AppendText("my_prefix=name_attach(dpp, \""+ tbMessChanName.Text + "\", 0);" + NL);
+            tbSourceGen.AppendText(" " + NL);
+            tbSourceGen.AppendText(" " + NL);
         }
+        private void BtnMessClientGen_Click(object sender, RoutedEventArgs e)
+        {
+            tbSourceGen.Clear();
+
+        }
+        private void BtnInterGen_Click(object sender, RoutedEventArgs e)
+        {
+            tbSourceGen.Clear();
+        }
+
+        private void BtnTimerGen_Click(object sender, RoutedEventArgs e)
+        {
+            tbSourceGen.Clear();
+        }
+
+        private void BtnRMGen_Click(object sender, RoutedEventArgs e)
+        {
+            tbSourceGen.Clear();
+        }
+
+
     }
 }

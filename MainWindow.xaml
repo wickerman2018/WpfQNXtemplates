@@ -11,28 +11,59 @@
             <TabItem Header="Поток">
                 <TabItem.Content>
                     <StackPanel>
-                        <Button x:Name="btnThreadGen" Content="Поток" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="75" Click="BtnThreadGen_Click"/>
+                        <Button x:Name="btnThreadGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="175" Click="BtnThreadGen_Click"/>
                         <Label x:Name="lbThreadName" Content="Имя функции потока" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
-                        <TextBox x:Name="tbThreadName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="Thread1" VerticalAlignment="Top" Width="174"/>
+                        <TextBox x:Name="tbThreadName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="Thread1" VerticalAlignment="Top" Width="175"/>
                         <Label x:Name="lbThreadDetachAttr" Content="Атрибут присоединения" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
-                        <ComboBox x:Name="cbThreadDetachAttr" Height="23" Text="Thread1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="174">
+                        <ComboBox x:Name="cbThreadDetachAttr" Height="23" Text="Thread1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175">
                             <ComboBoxItem>Присоединённый</ComboBoxItem>
                             <ComboBoxItem IsSelected="True">Отсоединённый</ComboBoxItem>                         
                         </ComboBox>
                         <Label x:Name="lbThreadSchedpolicy" Content="Атрибут диспетчеризации" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
-                        <ComboBox x:Name="cbThreadSchedpolicy" Height="23" Text="Thread1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="174">
+                        <ComboBox x:Name="cbThreadSchedpolicy" Height="23" Text="Thread1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175">
                             <ComboBoxItem>FIFO</ComboBoxItem>
                             <ComboBoxItem IsSelected="True">Не менять</ComboBoxItem>
                             <ComboBoxItem>Карусельная</ComboBoxItem>
                             <ComboBoxItem>Спорадческая</ComboBoxItem>
                         </ComboBox>
+                        <CheckBox x:Name="cbThreadHeader" Content="Сгенерировать заголовки" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
                     </StackPanel>
                 </TabItem.Content>
             </TabItem>
-            <TabItem Header="Обмен сообщениями">Вторая вкладка</TabItem>
-            <TabItem Header="Прерывание">Третья вкладка</TabItem>
-            <TabItem Header="Таймер">Третья вкладка</TabItem>
-            <TabItem Header="Менеджер ресурсов">Третья вкладка</TabItem>            
+            <TabItem Header="Обмен сообщениями">
+                <TabItem.Content>
+                    <StackPanel>
+                        <Button x:Name="btnMessServGen" Content="Генерировать шаблон сервера" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="175" Click="BtnMessServGen_Click"/>
+                        <Label x:Name="lbMessChanName" Content="Имя канала сообщений" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <TextBox x:Name="tbMessChanName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="MessChan1" VerticalAlignment="Top" Width="175"/>
+
+                        <Button x:Name="btnMessClientGen" Content="Генерировать шаблон клиента" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="175" Click="BtnMessClientGen_Click"/>
+                        
+                        <CheckBox x:Name="cbMessHeader" Content="Сгенерировать заголовки" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
+                    </StackPanel>
+                </TabItem.Content>
+            </TabItem>
+            <TabItem Header="Прерывание">
+                <TabItem.Content>
+                    <StackPanel>
+                        <Button x:Name="btnInterGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnInterGen_Click"/>
+                    </StackPanel>
+                </TabItem.Content>
+            </TabItem>
+            <TabItem Header="Таймер">
+                <TabItem.Content>
+                    <StackPanel>
+                        <Button x:Name="btnTimerGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnTimerGen_Click"/>
+                    </StackPanel>
+                </TabItem.Content>
+            </TabItem>
+            <TabItem Header="Менеджер ресурсов">
+                <TabItem.Content>
+                    <StackPanel>
+                        <Button x:Name="btnRMGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnRMGen_Click"/>
+                    </StackPanel>
+                </TabItem.Content>
+            </TabItem>            
         </TabControl>
         <TextBox x:Name="tbSourceGen" HorizontalAlignment="Left" Height="513" Margin="437,48,0,0" TextWrapping="Wrap" Text=" " VerticalAlignment="Top" Width="571"/>
         <Button x:Name="btnCopyToBuf" Content="Копировать в буфер обмена" HorizontalAlignment="Left" Margin="437,10,0,0" VerticalAlignment="Top" Width="225" Height="33" Click="BtnCopyToBuf_Click"/>
