@@ -37,8 +37,20 @@
                         <Label x:Name="lbMessChanName" Content="Имя канала сообщений" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
                         <TextBox x:Name="tbMessChanName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="MessChan1" VerticalAlignment="Top" Width="175"/>
 
+                        <Label x:Name="lbMessRecBufName" Content="Буфер принятого сообщения" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="tbMessRecBufTypeName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="char" VerticalAlignment="Top" Width="175"/>
+                            <TextBox x:Name="tbMessRecBufName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="RecBuf" VerticalAlignment="Top" Width="175"/>
+                        </StackPanel>
+                        <Label x:Name="lbMessRepBufName" Content="Буфер ответа" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="tbMessRepBufTypeName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="char" VerticalAlignment="Top" Width="175"/>
+                            <TextBox x:Name="tbMessRepBufName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="RepBuf" VerticalAlignment="Top" Width="175"/>
+                        </StackPanel>
+
                         <Button x:Name="btnMessClientGen" Content="Генерировать шаблон клиента" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="175" Click="BtnMessClientGen_Click"/>
-                        
+
+                        <CheckBox x:Name="cbThreadMess" Content="Создать поток" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
                         <CheckBox x:Name="cbMessHeader" Content="Сгенерировать заголовки" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
                     </StackPanel>
                 </TabItem.Content>
@@ -47,13 +59,9 @@
                 <TabItem.Content>
                     <StackPanel>
                         <Button x:Name="btnInterGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnInterGen_Click"/>
-                    </StackPanel>
-                </TabItem.Content>
-            </TabItem>
-            <TabItem Header="Таймер">
-                <TabItem.Content>
-                    <StackPanel>
-                        <Button x:Name="btnTimerGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnTimerGen_Click"/>
+
+                        <CheckBox x:Name="cbThreadInter" Content="Создать поток" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
+                        <CheckBox x:Name="cbInterHeader" Content="Сгенерировать заголовки" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
                     </StackPanel>
                 </TabItem.Content>
             </TabItem>
@@ -61,6 +69,20 @@
                 <TabItem.Content>
                     <StackPanel>
                         <Button x:Name="btnRMGen" Content="Генерировать шаблон" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="155" Click="BtnRMGen_Click"/>
+                        <Label x:Name="lbRMName" Content="Префикс" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <TextBox x:Name="tbRMName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="my_rm" VerticalAlignment="Top" Width="175"/>
+                        <Label x:Name="lbRMReadBufName" Content="Буфер читаемых данных" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="tbRMReadBufTypeName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="char" VerticalAlignment="Top" Width="175"/>
+                            <TextBox x:Name="tbRMReadBufName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="RecBuf" VerticalAlignment="Top" Width="175"/>
+                        </StackPanel>
+                        <Label x:Name="lbRMWriteBufName" Content="Буфер записываемых данных" HorizontalAlignment="Left"  VerticalAlignment="Top"  />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="tbRMWriteBufTypeName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="char" VerticalAlignment="Top" Width="175"/>
+                            <TextBox x:Name="tbRMWriteBufName" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="RepBuf" VerticalAlignment="Top" Width="175"/>
+                        </StackPanel>
+                        <CheckBox x:Name="cbThreadRM" Content="Создать поток" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
+                        <CheckBox x:Name="cbRMHeader" Content="Сгенерировать заголовки" HorizontalAlignment="Left" VerticalAlignment="Top" Width="175"/>
                     </StackPanel>
                 </TabItem.Content>
             </TabItem>            
