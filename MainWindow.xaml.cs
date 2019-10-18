@@ -20,24 +20,38 @@ namespace WpfQNXtemplates
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const char NL = '\n';
-        private const char TAB = '\t';
+        private const String ThreadTempl = "#HEADERSstatic void *#THREAD_NAME (void *){\n#THREADBODY\nreturn EXIT_SUCCESS; \n};\n\n" +
+            "pthread_attr_t attr_th;\npthread_attr_init(&attr_th);\npthread_attr_setdetachstate(&attr_th, #THREAD_DETACH_ATTR);\n" +
+            "pthread_attr_setschedpolicy(&attr_th, #THREADSHEDPOLICY);\npthread_create(NULL, &attr_th, #THREAD_NAME, NULL);";
 
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        private const String MessClientTempl = "#HEADERS\t#RECBUF_TYPE #RECBUF_NAME;\n\t#REPBUF_TYPE #REPBUF_NAME;\n\tint rcvid;\n\tdispatch_t *dpp;\n" +
+            "\tname_attach_t *my_prefix=NULL;\n\tdpp=dispatch_create();\n\tmy_prefix=name_attach(dpp, \"#MESS_CHAN\", 0);\n" +
+            "\trcvid=MsgReceive(my_prefix->chid, &#RECBUF_NAME, sizeof(#RECBUF_TYPE), NULL);\n" +
+            "\tMsgReply(rcvid, 1, &#REPBUF_NAME, sizeof(#REPBUF_TYPE));";
 
-        private void ThreadHeader()
-        {
-            if (cbThreadHeader.IsChecked == true)
-            {
-                tbSourceGen.AppendText("#include <pthread.h>" + NL + NL);
-            }
-            tbSourceGen.AppendText("static void *" + tbThreadName.Text + " (void *){" + NL);
-        }
+        private const String MessServTempl = "#HEADERS\t#RECBUF_TYPE #RECBUF_NAME;\n\t#REPBUF_TYPE #REPBUF_NAME;\n\tint coid=0, status=0;\n" +
+            "\tcoid=name_open( \"#MESS_CHAN\", 0);\n\tstatus=MsgSend(coid, &#RECBUF_NAME, sizeof(#RECBUF_TYPE), &#REPBUF_NAME, sizeof(#REPBUF_TYPE));\n\tname_close(coid);";
 
-        private void ThreadBottom()
+        private const String IntTempl = "#HEADERSconst struct sigevent *IntHandler(void *arg, int id){\nstruct sigevent *event = (struct sigevent *)arg;\n" +
+            "\t//TODO add interrupt handle here\n\nreturn event;\n};\n\nstruct sigevent event;\nSIGEV_INTR_INIT(&event);\n" +
+            "intId = InterruptAttach(HW_IRQ, IntHandler, &event, sizeof(event), 0);\nInterruptUnmask(HW_IRQ, intId);\nfor(;;){\n\tInterruptWait(NULL, NULL);\n\n}";
+
+        private const String RMTempl = "int io_open (resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void *extra) {\nreturn (iofunc_open_default(ctp, msg, handle, extra));\n}\n" +
+            "\nint io_read (resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) { \nint rc, rmptr, nbytes, nleft; \n#READBUF_TYPE *ptr;\nptr = (#READBUF_TYPE*) malloc(sizeof(#READBUF_TYPE)); \n" +
+            "rc = iofunc_read_verify (ctp, msg, (iofunc_ocb_t*) ocb, NULL);\nif (rc != EOK) return rc;\nif ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) return ENOSYS;\n" +
+            "if (msg->i.nbytes < 0) return EINVAL;\nif (msg->i.nbytes == 0) return EOK;\nnleft = sizeof(#READBUF_TYPE);\nnbytes = __min(msg->i.nbytes, nleft);\n*ptr = #READBUF_NAME;\n" +
+            "ocb->offset += nbytes;\n_IO_SET_READ_NBYTES(ctp, nbytes);\nrmptr = _RESMGR_PTR(ctp, ptr, nbytes); \nocb->attr->flags |= IOFUNC_ATTR_ATIME | IOFUNC_ATTR_DIRTY_TIME;\nfree(ptr);\n" +
+            "return _RESMGR_NPARTS(1);\n}\n\nint io_write (resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {\nint rc; \n#WRITEBUF_TYPE *pSP;\n" +
+            "pSP = (#WRITEBUF_TYPE*)malloc(sizeof(#WRITEBUF_TYPE)); \nrc = iofunc_write_verify (ctp, msg, (iofunc_ocb_t*) ocb, NULL); \nif (rc != EOK) return rc;\n" +
+            "if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) return ENOSYS;\nif (msg->i.nbytes < 0) return EINVAL;\nif (msg->i.nbytes == 0) return EOK;\n" +
+            "_IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);\n#WRITEBUF_NAME=*pSP;\nocb->attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_DIRTY_TIME;\nfree(pSP);\nreturn EXIT_SUCCESS;\n}\n\n" +
+            "resmgr_attr_t resmgr_attr;\ndispatch_t * dpp;\ndispatch_context_t* ctp;\nint id;\nif ((dpp = dispatch_create()) == NULL) cerr << \"Unable to allocate dispatch handle.\\n\";\n" +
+            "memset(&resmgr_attr, 0, sizeof resmgr_attr);\nresmgr_attr.nparts_max = 1;\nresmgr_attr.msg_max_size = 2048;\n" +
+            "iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &connect_funcs, _RESMGR_IO_NFUNCS, &io_funcs);\nconnect_funcs.open = io_open;\nio_funcs.read = io_read;\nio_funcs.write = io_write;\ni" +
+            "ofunc_attr_init(&attr, S_IFNAM | 0666, 0, 0); \nattr.nbytes = sizeof(#READBUF_TYPE);\nif ((id = resmgr_attach(dpp, &resmgr_attr, \"/dev/#RM_NAME\", _FTYPE_ANY, 0,\n" +
+            "&connect_funcs, &io_funcs, &attr)) == -1) cerr << \"Unable to attach name.\\n\"; \nctp = dispatch_context_alloc(dpp);\nwhile (1)\n{\n" +
+            "\tif ((ctp = dispatch_block(ctp)) == NULL) cerr << \"block error\\n\";\n\tdispatch_handler(ctp);\n}";
+        private String GetThreadTempl()
         {
             String ThreadDetachAttr = "PTHREAD_CREATE_DETACHED";
             String ThreadSchedpolicy = "SCHED_NOCHANGE";
@@ -65,137 +79,79 @@ namespace WpfQNXtemplates
                     ThreadSchedpolicy = "SCHED_SPORADIC";
                     break;
             }
-
-            tbSourceGen.AppendText("return EXIT_SUCCESS; " + NL + "};" + NL + NL);
-            //Запуск потока
-            tbSourceGen.AppendText("pthread_attr_t attr_th;" + NL);
-            tbSourceGen.AppendText("pthread_attr_init(&attr_th);" + NL);
-            tbSourceGen.AppendText("pthread_attr_setdetachstate(&attr_th, " + ThreadDetachAttr + ");" + NL);
-            if (cbThreadSchedpolicy.SelectedIndex != 1)
-                tbSourceGen.AppendText("pthread_attr_setschedpolicy(&attr_th, " + ThreadSchedpolicy + ");" + NL);
-            tbSourceGen.AppendText("pthread_create(NULL, &attr_th, " + tbThreadName.Text + ", NULL);" + NL);
-
+            String GenCode = ThreadTempl;
+            if (cbThreadHeader.IsChecked == true)
+                GenCode = GenCode.Replace("#HEADERS", "#include <pthread.h>\n\n");
+            else
+                GenCode = GenCode.Replace("#HEADERS", "");
+            GenCode = GenCode.Replace("#THREAD_NAME", tbThreadName.Text);            
+            GenCode = GenCode.Replace("#THREAD_DETACH_ATTR", ThreadDetachAttr);
+            GenCode = GenCode.Replace("#THREADSHEDPOLICY", ThreadSchedpolicy);
+            return GenCode;
         }
+        private void SetMessTemp(String TemlStr) {
+            tbSourceGen.Clear();
+            String MessPaste = TemlStr;
+            MessPaste = MessPaste.Replace("#HEADERS", "");
+            MessPaste = MessPaste.Replace("#RECBUF_TYPE", tbMessRecBufTypeName.Text);
+            MessPaste = MessPaste.Replace("#RECBUF_NAME", tbMessRecBufName.Text);
+            MessPaste = MessPaste.Replace("#REPBUF_TYPE", tbMessRecBufTypeName.Text);
+            MessPaste = MessPaste.Replace("#REPBUF_NAME", tbMessRecBufName.Text);
+            MessPaste = MessPaste.Replace("#MESS_CHAN", tbMessChanName.Text);
+            if (cbThreadMess.IsChecked == true)
+            {
+                String ThreadPaste = GetThreadTempl();
+                MessPaste = ThreadPaste.Replace("#THREADBODY", MessPaste);
+            }
+            else
+            {
+                MessPaste = MessPaste.Replace("\t", "");
+            }
+            tbSourceGen.AppendText(MessPaste);
+        }
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
         private void BtnThreadGen_Click(object sender, RoutedEventArgs e)
         {
 
             tbSourceGen.Clear();
-            //Создание функции
-            ThreadHeader();
-            tbSourceGen.AppendText(NL.ToString());
-            ThreadBottom();
+            String ThreadPaste = GetThreadTempl();
+            ThreadPaste = ThreadPaste.Replace("#THREADBODY", "//TODO add your code here");
+            tbSourceGen.AppendText(ThreadPaste);
         }
 
         private void BtnCopyToBuf_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(tbSourceGen.Text);
 
         private void BtnMessServGen_Click(object sender, RoutedEventArgs e)
-        {            
-            tbSourceGen.Clear();
-            if(cbThreadMess.IsChecked==true) ThreadHeader();
-            tbSourceGen.AppendText(TAB + tbMessRecBufTypeName.Text + " " + tbMessRecBufName.Text + ";" + NL);
-            tbSourceGen.AppendText(TAB + tbMessRepBufTypeName.Text + " " + tbMessRepBufName.Text + ";" + NL);
-            tbSourceGen.AppendText(TAB+ "int rcvid;" + NL);
-            tbSourceGen.AppendText(TAB + "dispatch_t *dpp;" + NL);
-            tbSourceGen.AppendText(TAB + "name_attach_t *my_prefix=NULL;" + NL);
-            tbSourceGen.AppendText(TAB + "dpp=dispatch_create();" + NL);
-            tbSourceGen.AppendText(TAB + "my_prefix=name_attach(dpp, \"" + tbMessChanName.Text + "\", 0);" + NL);
-            tbSourceGen.AppendText(TAB + "rcvid=MsgReceive(my_prefix->chid, &" + tbMessRecBufName.Text + ", sizeof(" + tbMessRecBufName.Text + "), NULL);" + NL);
-            tbSourceGen.AppendText(TAB + "MsgReply(rcvid, 1, &" + tbMessRepBufName.Text + ", sizeof("+ tbMessRepBufName.Text + "));" + NL);
-            if (cbThreadMess.IsChecked == true) ThreadBottom();
+        {
+            SetMessTemp(MessServTempl);
         }
         private void BtnMessClientGen_Click(object sender, RoutedEventArgs e)
         {
-            tbSourceGen.Clear();
-            if (cbThreadMess.IsChecked == true) ThreadHeader();
-            tbSourceGen.AppendText(TAB + tbMessRecBufTypeName.Text + " " + tbMessRecBufName.Text + ";" + NL);
-            tbSourceGen.AppendText(TAB + tbMessRepBufTypeName.Text + " " + tbMessRepBufName.Text + ";" + NL);
-            tbSourceGen.AppendText(TAB + "int coid=0, status=0;" + NL);
-            tbSourceGen.AppendText(TAB + "coid=name_open( \"" + tbMessChanName.Text + "\", 0);" + NL);
-            tbSourceGen.AppendText(TAB + "status=MsgSend(coid, &" + tbMessRecBufName.Text + ", sizeof(" + tbMessRecBufName.Text + "), &" + tbMessRepBufName.Text + ", sizeof(" + tbMessRepBufName.Text + ");"+ NL);
-            tbSourceGen.AppendText(TAB + "name_close(coid);" + NL);
-            if (cbThreadMess.IsChecked == true) ThreadBottom();
-
+            SetMessTemp(MessClientTempl);
         }
         private void BtnInterGen_Click(object sender, RoutedEventArgs e)
         {
             tbSourceGen.Clear();
-            //Поток прерывания 
-            tbSourceGen.AppendText("const struct sigevent *IntHandler(void *arg, int id){" + NL + 
-                "struct sigevent *event = (struct sigevent *)arg;" + NL + 
-                TAB + "//TODO add interrupt handle here" + NL + NL);
-            tbSourceGen.AppendText("return event;" + NL + "};" + NL + NL);
-            //Вызов прерывания
-            tbSourceGen.AppendText("struct sigevent event;" + NL);
-            tbSourceGen.AppendText("SIGEV_INTR_INIT(&event);" + NL + 
-                "intId = InterruptAttach(HW_IRQ, IntHandler, &event, sizeof(event), 0);" + NL +
-                "InterruptUnmask(HW_IRQ, intId);" + NL);
-            tbSourceGen.AppendText("for(;;){" + NL + 
-                TAB + "InterruptWait(NULL, NULL);" + NL + NL + "}" + NL);
+            String IntPaste = IntTempl;
+            IntPaste = IntPaste.Replace("#HEADERS", "");
+            tbSourceGen.AppendText(IntPaste);
         }
 
         private void BtnRMGen_Click(object sender, RoutedEventArgs e)
         {
             tbSourceGen.Clear();
-            //io_open
-            tbSourceGen.AppendText("int io_open (resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void *extra) {" + NL +
-                "return (iofunc_open_default(ctp, msg, handle, extra));" + NL + "}" + NL + NL);
-            //io_read
-            tbSourceGen.AppendText("int io_read (resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) { " + NL +
-                "int rc, rmptr, nbytes, nleft; " + NL);
-            tbSourceGen.AppendText(tbRMReadBufTypeName.Text + " *ptr;" + NL +
-                "ptr = (" + tbRMReadBufTypeName.Text + "*) malloc(sizeof(" + tbRMReadBufTypeName.Text + ")); " + NL);
-            tbSourceGen.AppendText("rc = iofunc_read_verify (ctp, msg, (iofunc_ocb_t*) ocb, NULL);" + NL +
-                "if (rc != EOK) return rc;" + NL +
-                "if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) return ENOSYS;" + NL +
-                "if (msg->i.nbytes < 0) return EINVAL;" + NL +
-                "if (msg->i.nbytes == 0) return EOK;" + NL);
-            tbSourceGen.AppendText("nleft = sizeof(" + tbRMReadBufTypeName.Text + ");" + NL + 
-                "nbytes = __min(msg->i.nbytes, nleft);" + NL +
-                "*ptr = " + tbRMReadBufName.Text + ";" + NL);
-            tbSourceGen.AppendText("ocb->offset += nbytes;" + NL +
-                "_IO_SET_READ_NBYTES(ctp, nbytes);" + NL +
-                "rmptr = _RESMGR_PTR(ctp, ptr, nbytes); " + NL+
-                "ocb->attr->flags |= IOFUNC_ATTR_ATIME | IOFUNC_ATTR_DIRTY_TIME;" + NL +
-                "free(ptr);" + NL + 
-                "return _RESMGR_NPARTS(1);" + NL + "}" + NL + NL);
-            //io_write
-            tbSourceGen.AppendText("int io_write (resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {" + NL +
-                 "int rc; " + NL);
-            tbSourceGen.AppendText(tbRMWriteBufTypeName.Text + " *pSP;" + NL + 
-                 "pSP = (" + tbRMWriteBufTypeName.Text + "*)malloc(sizeof(" + tbRMWriteBufTypeName.Text + ")); " + NL);
-            tbSourceGen.AppendText("rc = iofunc_write_verify (ctp, msg, (iofunc_ocb_t*) ocb, NULL); " + NL +
-                "if (rc != EOK) return rc;" + NL +
-                "if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) return ENOSYS;" + NL +
-                "if (msg->i.nbytes < 0) return EINVAL;" + NL +
-                "if (msg->i.nbytes == 0) return EOK;" + NL +
-                "_IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);" + NL);
-            tbSourceGen.AppendText(tbRMWriteBufName.Text + "=*pSP;" + NL);
-            tbSourceGen.AppendText("ocb->attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_DIRTY_TIME;" + NL +
-                "free(pSP);" + NL +
-                "return EXIT_SUCCESS;" + NL +"}" + NL + NL);
-            
-            //resmgr
-            tbSourceGen.AppendText("resmgr_attr_t resmgr_attr;" + NL +
-                "dispatch_t * dpp;" + NL +
-                "dispatch_context_t* ctp;" + NL +
-                "int id;" + NL +
-                "if ((dpp = dispatch_create()) == NULL) cerr << \"Unable to allocate dispatch handle.\\n\";" + NL +
-                "memset(&resmgr_attr, 0, sizeof resmgr_attr);" + NL +
-                "resmgr_attr.nparts_max = 1;" + NL +
-                "resmgr_attr.msg_max_size = 2048;" + NL +
-                "iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &connect_funcs, _RESMGR_IO_NFUNCS, &io_funcs);" + NL +
-                "connect_funcs.open = io_open;" + NL +
-                "io_funcs.read = io_read;" + NL +
-                "io_funcs.write = io_write;" + NL +
-                "iofunc_attr_init(&attr, S_IFNAM | 0666, 0, 0); " + NL);
-            tbSourceGen.AppendText("attr.nbytes = sizeof(" + tbRMReadBufTypeName.Text + ");" + NL +
-                 "if ((id = resmgr_attach(dpp, &resmgr_attr, \"/dev/" + tbRMName.Text + "\", _FTYPE_ANY, 0," + NL +
-                 "&connect_funcs, &io_funcs, &attr)) == -1) cerr << \"Unable to attach name.\\n\"; " + NL);
-            tbSourceGen.AppendText("ctp = dispatch_context_alloc(dpp);" + NL +
-                "while (1)" + NL  + "{" + NL +
-                TAB + "if ((ctp = dispatch_block(ctp)) == NULL) cerr << \"block error\\n\";" + NL +
-                TAB + "dispatch_handler(ctp);" + NL + "}" + NL + NL);
-            tbSourceGen.AppendText("" + NL);
+            String RMPaste = RMTempl;
+            RMPaste = RMPaste.Replace("#HEADERS", "");
+            RMPaste = RMPaste.Replace("#READBUF_TYPE", tbRMReadBufTypeName.Text);
+            RMPaste = RMPaste.Replace("#READBUF_NAME", tbRMReadBufName.Text);
+            RMPaste = RMPaste.Replace("#WRITEBUF_TYPE", tbMessRecBufTypeName.Text);
+            RMPaste = RMPaste.Replace("#WRITEBUF_NAME", tbMessRecBufName.Text);
+            RMPaste = RMPaste.Replace("#RM_NAME", tbMessChanName.Text);
+            tbSourceGen.AppendText(RMPaste);
 
         }
 
